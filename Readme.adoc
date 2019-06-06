@@ -1,0 +1,38 @@
+= wine-cl
+
+A collection of scripts for "installing" the Microsoft compiler (cl.exe) on GNU/Linux.
+
+== Installation
+
+The installation process is not completely automated, since the https://visualstudio.microsoft.com/downloads/[Visual Studio Installer] does not seem to work under wine.
+
+  * Use a real Windows machine for installing Visual Studio
+  * Copy in a separate folder in the GNU/Linux environment all installed files
+  * execute `create-wine-prefix`, for creating a wine prefix for the compiler environment, and for generating wrapper scripts.
+  * execute `test.sh` to verify that compiling, linking and execution of the compiled programs works
+  * have fun, you should be able to execute `wine-cl`, `wine-link`, `wine-rc`, and `wine-mt`. They support all flags of the native tool, and some, like `--help`, in addition.
+
+== ToDo
+
+Notice that the status of those scripts is still alpha-quality, here is a list of open issues:
+
+  * Rewrite `create-wine-prefix`, as it should take as parameter the location of the wine prefix, and whre to create the wrapper scripts (paths are hard-coded for now).
+  * Improve performance by executing `wine-path` only for absolute files.
+  * Try to add some tests with external libraries.
+  * Add a test that needs `mt.exe`.
+  * There is an issue when building an MFC project with `MAKEFLAGS=-jN`, with `N>1`, this should get investigated
+  * Add test for other build systems apart from CMake/make.
+  * Enhance `test.sh`, it should take as parameter a build directory, and build every target in a separate subfolder.
+  * Install cmake in the wine prefix, and test it too.
+  * Reduce footprint of the wine environment.
+
+== Goals
+
+The goal of this project is to provide an easy and automated way to add the windows compiler on GNU/Linux systems as if it would be another native program.
+
+This is especially useful when testing or playing with small code snippets to ensure compatibility between different compilers.
+
+Of course it would be nice if it would work as any other native compiler, that's the reason `test.sh` also executes cmake for testing.
+Since paths are translated from unix to windows every time, and not just when invoking CMake the first time, it will not be as performant.
+
+A better solution would be to install CMake in wine too, and execute it from `cmd.exe`.
