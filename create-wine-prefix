@@ -3,16 +3,7 @@
 set -o errexit
 set -o nounset
 
-export WINEPREFIX="$HOME/.wine-msvc";
-export WINEDLLOVERRIDES="mscoree,mshtml="; # avoid unnecessary
-export WINEARCH=win64;
-#export WINEARCH=win32;
-#export WINEDEBUG=-all;
-
-PATH_DIR="$HOME/bin";
-arch="x64";
-#arch="x86";
-
+#placeholders for template files
 PLACEHOLDER_EXECUTABLE="__EXECUTABLE__";
 PLACEHOLDER_WINEPREFIX="__WINEPREFIX__";
 PLACEHOLDER_WINEDLLOVERRIDES="__WINEDLLOVERRIDES__";
@@ -21,120 +12,184 @@ PLACEHOLDER_WINEARCH="__WINEARCH__";
 PLACEHOLDER_INCLUDE_DEFAULT_PATHS="__INCLUDE_DEFAULT_PATHS__";
 PLACEHOLDER_LIB_DEFAULT_PATHS="__LIB_DEFAULT_PATHS__";
 
-PLACEHOLDER_ARCH="__ARCH__"
 
-msvc_dir="$1";
-winsdk_dir="$1";
+DEFAULT_BIN_DIR="$HOME/bin";
+DEFAULT_WINEPREFIX="$HOME/.wine-msvc";
 
+help(){
+  printf '%s\n\n' "${0##*/}";
 
+  printf '\t--help prints this message\n';
+  printf '\t--bin directory where to "install" wrapper scripts, default is "%s"\n' "$DEFAULT_BIN_DIR";
+  printf '\t--vs directory where to search for cl.exe and all other compontents';
+  printf '\t--wine-prefix wine prefix to use, default is "%s". Is also set with WINEPREFIX environment variable\n' "$DEFAULT_WINEPREFIX";
+  printf '\t--no-copy do not copy vs directory in wine prefix';
+  printf '\nEnvironment variables:\n';
+  printf '\tWINEPREFIX can be used instead of --wine-prefix, if both are present, the command line parameter takes precedence\,'
+  # add --arch, in case someone want's only 32 bit
+}
 
-msvc_version='14.20.27508';
-winsdk_version='10.0.18362.0';
+check_value() {
+  if [ "$1" -lt 2 ]; then :;
+    printf 'Missing value for %s\n\n' "$2"; help; exit 1;
+  fi
+}
 
-CL="$(find "$msvc_dir" -iname cl.exe -type f -ipath "*Host$arch/$arch*" -ipath "*bin*" -print -quit)";
-# Telemetry event upload failed: 'Failed to open connection to VCTIP' -> maybe remove file?
-LINK="$(find "$msvc_dir" -iname link.exe -type f -ipath "*Host$arch/$arch*" -ipath "*bin*" -print -quit)";
-LIB="$(find "$msvc_dir" -iname lib.exe -type f -ipath "*Host$arch/$arch*" -ipath "*bin*" -print -quit)";
-RC="$(find "$winsdk_dir" -iname rc.exe -type f -ipath "*$arch*" -ipath "*bin*" -print -quit)";
-# link.exe tries to execute rc.exe and has problems if it is not in path or same folder of link.exe -> copy rc.exe and rcdll.dll in folder of link.exe
-MT="$(find "$winsdk_dir" -iname mt.exe -type f -ipath "*$arch*" -ipath "*bin*" -print -quit)";
+append_win0_paths(){
+  sort -z | uniq -z | xargs -0 winepath -0 --windows | sed -e 's|\\|\\\\|g' | xargs --no-run-if-empty -0 printf ';%s';
+}
 
-INCLUDE_DEFAULT_PATHS="";
-LIB_DEFAULT_PATHS="";
+main() {
+  [ $# -eq 0 ] && set -- "$@" '?';
 
-include_path="$(find "$msvc_dir" -iname cstdio -type f -ipath '*include*' -not -ipath '*onecore*'    -printf '%h\0' -quit | xargs --no-run-if-empty -0 winepath --windows)";
-INCLUDE_DEFAULT_PATHS="$INCLUDE_DEFAULT_PATHS${include_path:+;$include_path}";
+  BIN_DIR="$DEFAULT_BIN_DIR";
+  if [ -n "${WINEPREFIX+x}" ]; then :;
+    # do nothing, take global variable
+  else :;
+    WINEPREFIX="$DEFAULT_WINEPREFIX";
+  fi
+  COPY_VS=true;
+  while test "$#" -gt 0; do :;
+    key="$1";
+    case "$key" in
+      -h|--help|h|help|\?)
+        help; exit 0;
+        ;;
+      --bin)
+        check_value "$#" "$key"; BIN_DIR="$2"; shift;
+        ;;
+      --wine-prefix)
+        check_value "$@"; WINEPREFIX="$2"; shift;
+        ;;
+      --vs)
+        check_value "$#" "$key"; VS_DIR="$2"; shift;
+        ;;
+      --no-copy)
+        COPY_VS=false;
+        ;;
+      *)
+        { printf 'Unrecognized value: %s\n\n' "$key"; help; } >&2;
+        exit 1;
+        ;;
+    esac
+    shift;
+  done
 
-include_path="$(find "$msvc_dir" -iname afxwin.h -type f -ipath '*include*' -not -ipath '*onecore*'    -printf '%h\0' -quit | xargs --no-run-if-empty -0 winepath --windows)";
-INCLUDE_DEFAULT_PATHS="$INCLUDE_DEFAULT_PATHS${include_path:+;$include_path}";
+  export WINEPREFIX;
+  export WINEDLLOVERRIDES="mscoree,mshtml="; # avoid unnecessary bloat
+  export WINEARCH=win64;
+  #export WINEARCH=win32;
+  #export WINEDEBUG=-all;
+  wine wineboot;
 
-lib_path="$(find "$msvc_dir" -iname libcmt.lib -type f -ipath '*lib*' -ipath "*$arch*" -not -ipath '*onecore*'  -printf '%h\0' -quit|  xargs --no-run-if-empty -0 winepath --windows)";
-LIB_DEFAULT_PATHS="$LIB_DEFAULT_PATHS${lib_path:+;$lib_path}";
+  # https://askubuntu.com/questions/338758/how-to-quickly-extract-all-kinds-of-archived-files-from-command-line
+  # FIXME: in case of an archive, extract it, and override msvc_dir
 
-lib_path="$(find "$msvc_dir" -iname mfc140.lib -type f -ipath '*lib*' -ipath "*$arch*" -not -ipath '*onecore*'  -printf '%h\0' -quit|  xargs --no-run-if-empty -0 winepath --windows)";
-LIB_DEFAULT_PATHS="$LIB_DEFAULT_PATHS${lib_path:+;$lib_path}";
+  microsoft_visual_studio="$(find "$VS_DIR" -iname 'Microsoft Visual Studio' -type d -print -quit)"
+  windows_kits="$(find "$VS_DIR" -iname 'Windows Kits' -not -ipath '*Microsoft SDKs*' -type d -print -quit)"
 
-include_path="$(find "$winsdk_dir" -iname corecrt.h -type f -ipath '*include*' -not -ipath '*onecore*'  -printf '%h\0' -quit | xargs --no-run-if-empty -0 winepath --windows)";
-INCLUDE_DEFAULT_PATHS="$INCLUDE_DEFAULT_PATHS${include_path:+;$include_path}";
+  # FIXME: add support for 32 bit prefix
+  arch="x64";
+  progfiles="$WINEPREFIX/drive_c/Program Files (x86)/";
+  if [ ! -d "$progfiles" ]; then :;
+    arch="x86";
+    progfiles="$WINEPREFIX/drive_c/Program Files/";
+  fi
+  [ -d "$progfiles" ] || { printf "%s ist not a directory" "$progfiles" >&2; exit 1; }
 
-include_path="$(find "$winsdk_dir" -iname windows.h -type f -ipath '*include*' -not -ipath '*onecore*'  -printf '%h\0' -quit | xargs --no-run-if-empty -0 winepath --windows)";
-INCLUDE_DEFAULT_PATHS="$INCLUDE_DEFAULT_PATHS${include_path:+;$include_path}";
+  if $COPY_VS; then :;
+    cp -r "$windows_kits" --target-directory "$progfiles"
+    cp -r "$microsoft_visual_studio" --target-directory "$progfiles"
+    msvc_dir="$progfiles/Microsoft Visual Studio"; # fixme, should use old name as find was not case sensitive
+    winsdk_dir="$progfiles/Windows Kits";
+  else
+    msvc_dir="$microsoft_visual_studio";
+    winsdk_dir="$windows_kits";
+  fi
 
-include_path="$(find "$winsdk_dir" -iname winapifamily.h -type f -ipath '*include*' -not -ipath '*onecore*'  -printf '%h\0' -quit | xargs --no-run-if-empty -0 winepath --windows)"
-INCLUDE_DEFAULT_PATHS="$INCLUDE_DEFAULT_PATHS${include_path:+;$include_path}";
+  CL="$(find "$msvc_dir" -iname cl.exe -type f -ipath "*Host$arch/$arch*" -ipath "*bin*" -print -quit)";
+  # Telemetry event upload failed: 'Failed to open connection to VCTIP' -> maybe remove file?, test with verbose linker
+  LINK="$(find "$msvc_dir" -iname link.exe -type f -ipath "*Host$arch/$arch*" -ipath "*bin*" -print -quit)";
+  LIB="$(find "$msvc_dir" -iname lib.exe -type f -ipath "*Host$arch/$arch*" -ipath "*bin*" -print -quit)";
 
-lib_path="$(find "$winsdk_dir" -iname kernel32.lib -type f -ipath '*lib*' -ipath "*$arch*" -not -ipath '*onecore*' -printf '%h\0' -quit | xargs --no-run-if-empty -0 winepath --windows)"
-LIB_DEFAULT_PATHS="$LIB_DEFAULT_PATHS${lib_path:+;$lib_path}";
+  RC="$(find "$winsdk_dir" -iname rc.exe -type f -ipath "*$arch*" -ipath "*bin*" -print -quit)";
+  # recheck: link.exe tries to execute rc.exe and has problems if it is not in path or same folder of link.exe -> copy rc.exe and rcdll.dll in folder of link.exe
+  MT="$(find "$winsdk_dir" -iname mt.exe -type f -ipath "*$arch*" -ipath "*bin*" -print -quit)";
 
-lib_path="$(find "$winsdk_dir" -iname libucrt.lib -type f -ipath '*lib*' -ipath "*$arch*" -not -ipath '*onecore*'  -printf '%h\0' -quit | xargs --no-run-if-empty -0 winepath --windows)"
-LIB_DEFAULT_PATHS="$LIB_DEFAULT_PATHS${lib_path:+;$lib_path}";
+  INCLUDE_DEFAULT_PATHS="";
+  LIB_DEFAULT_PATHS="";
 
+  include_path="$(find "$msvc_dir" -type f -ipath '*include*' -not -ipath '*onecore*' \( -iname 'afxwin.h' -or -iname 'cstdio' -or -iname 'winapifamily.h' \) -printf '%h\0' | append_win0_paths )";
+  INCLUDE_DEFAULT_PATHS="$INCLUDE_DEFAULT_PATHS${include_path:+$include_path}";
 
+  lib_path="$(find "$msvc_dir" -type f -ipath '*lib*' -ipath "*$arch*" -not -ipath '*onecore*' \( -iname 'libcmt.lib' -or -iname 'mfc140.lib' \) -printf '%h\0' | append_win0_paths )";
+  LIB_DEFAULT_PATHS="$LIB_DEFAULT_PATHS${lib_path:+$lib_path}";
 
-PLACEHOLDER_IS_HELP_FUNCTION="__IS_HELP_FUNCTION__";
-is_help_function='is_help_param(){ [ "$1" = "-h" ] || [ "$1" = "h" ] || [ "$1" = "--help" ] || [ "$1" = "/help" ] || [ "$1" = "help" ] || [ "$1" = "?" ] || [ "$1" = "/?" ]; }'
+  include_path="$(find "$winsdk_dir" -type f -ipath '*include*' -not -ipath '*onecore*' \( -iname 'corecrt.h' -or -iname 'windows.h' -or -iname 'winapifamily.h' \) -printf '%h\0' | append_win0_paths )";
+  INCLUDE_DEFAULT_PATHS="$INCLUDE_DEFAULT_PATHS${include_path:+$include_path}";
 
-PLACEHOLDER_IS_VERSION_FUNCTION="__IS_VERSION_FUNCTION__";
-is_version_function='is_version_param(){ [ "$1" = "-v" ] || [ "$1" = "--version" ]; }';
+  lib_path="$(find "$winsdk_dir" -type f -ipath '*lib*' -ipath "*$arch*" -not -ipath '*onecore*' \( -iname 'kernel32.lib' -or -iname 'libucrt.lib' \) -printf '%h\0' | append_win0_paths )";
+  LIB_DEFAULT_PATHS="$LIB_DEFAULT_PATHS${lib_path:+$lib_path}";
 
-INCLUDE_DEFAULT_PATHS="$(printf '%s' "$INCLUDE_DEFAULT_PATHS" | sed -e 's|\\|\\\\|g' )"
-LIB_DEFAULT_PATHS="$(printf '%s' "$LIB_DEFAULT_PATHS" | sed -e 's|\\|\\\\|g' )"
-
-cp "wine-cl-template" "$PATH_DIR/wine-cl";
-ex \
+  cp "wine-cl-template" "$BIN_DIR/wine-cl";
+  ex \
   -sc "%s#${PLACEHOLDER_WINEPREFIX}#${WINEPREFIX}#g" \
   -sc "%s#${PLACEHOLDER_WINEDLLOVERRIDES}#${WINEDLLOVERRIDES}#g" \
   -sc "%s#${PLACEHOLDER_WINEARCH}#${WINEARCH}#g" \
   -sc "%s#${PLACEHOLDER_EXECUTABLE}#${CL}#g" \
   -sc "%s#${PLACEHOLDER_INCLUDE_DEFAULT_PATHS}#$INCLUDE_DEFAULT_PATHS#g" \
   -sc "%s#${PLACEHOLDER_LIB_DEFAULT_PATHS}#$LIB_DEFAULT_PATHS#g" \
-  -cx "$PATH_DIR/wine-cl";
-chmod +x "$PATH_DIR/wine-cl";
+  -cx "$BIN_DIR/wine-cl";
+  chmod +x "$BIN_DIR/wine-cl";
 
-cp "wine-link-template" "$PATH_DIR/wine-link";
-ex \
+  cp "wine-link-template" "$BIN_DIR/wine-link";
+  ex \
   -sc "%s#${PLACEHOLDER_WINEPREFIX}#${WINEPREFIX}#g" \
   -sc "%s#${PLACEHOLDER_WINEDLLOVERRIDES}#${WINEDLLOVERRIDES}#g" \
   -sc "%s#${PLACEHOLDER_WINEARCH}#${WINEARCH}#g" \
   -sc "%s#${PLACEHOLDER_EXECUTABLE}#${LINK}#g" \
   -sc "%s#${PLACEHOLDER_INCLUDE_DEFAULT_PATHS}#$INCLUDE_DEFAULT_PATHS#g" \
   -sc "%s#${PLACEHOLDER_LIB_DEFAULT_PATHS}#$LIB_DEFAULT_PATHS#g" \
-  -cx "$PATH_DIR/wine-link"
-chmod +x "$PATH_DIR/wine-link";
+  -cx "$BIN_DIR/wine-link"
+  chmod +x "$BIN_DIR/wine-link";
 
-cp "wine-lib-template" "$PATH_DIR/wine-lib";
-ex \
+  cp "wine-lib-template" "$BIN_DIR/wine-lib";
+  ex \
   -sc "%s#${PLACEHOLDER_WINEPREFIX}#${WINEPREFIX}#g" \
   -sc "%s#${PLACEHOLDER_WINEDLLOVERRIDES}#${WINEDLLOVERRIDES}#g" \
   -sc "%s#${PLACEHOLDER_WINEARCH}#${WINEARCH}#g" \
   -sc "%s#${PLACEHOLDER_EXECUTABLE}#${LIB}#g" \
   -sc "%s#${PLACEHOLDER_INCLUDE_DEFAULT_PATHS}#$INCLUDE_DEFAULT_PATHS#g" \
   -sc "%s#${PLACEHOLDER_LIB_DEFAULT_PATHS}#$LIB_DEFAULT_PATHS#g" \
-  -cx "$PATH_DIR/wine-lib"
-chmod +x "$PATH_DIR/wine-lib";
+  -cx "$BIN_DIR/wine-lib"
+  chmod +x "$BIN_DIR/wine-lib";
 
 
-cp "wine-mt-template" "$PATH_DIR/wine-mt";
-ex \
+  cp "wine-mt-template" "$BIN_DIR/wine-mt";
+  ex \
   -sc "%s#${PLACEHOLDER_WINEPREFIX}#${WINEPREFIX}#g" \
   -sc "%s#${PLACEHOLDER_WINEDLLOVERRIDES}#${WINEDLLOVERRIDES}#g" \
   -sc "%s#${PLACEHOLDER_WINEARCH}#${WINEARCH}#g" \
   -sc "%s#${PLACEHOLDER_EXECUTABLE}#${MT}#g" \
   -sc "%s#${PLACEHOLDER_INCLUDE_DEFAULT_PATHS}#$INCLUDE_DEFAULT_PATHS#g" \
   -sc "%s#${PLACEHOLDER_LIB_DEFAULT_PATHS}#$LIB_DEFAULT_PATHS#g" \
-  -cx "$PATH_DIR/wine-mt"
-chmod +x "$PATH_DIR/wine-mt";
-cp "$PATH_DIR/wine-mt" "$PATH_DIR/mt"; # for cmake
+  -cx "$BIN_DIR/wine-mt"
+  chmod +x "$BIN_DIR/wine-mt";
+  cp "$BIN_DIR/wine-mt" "$BIN_DIR/mt"; # for cmake
 
 
-cp "wine-rc-template" "$PATH_DIR/wine-rc";
-ex \
+  cp "wine-rc-template" "$BIN_DIR/wine-rc";
+  ex \
   -sc "%s#${PLACEHOLDER_WINEPREFIX}#${WINEPREFIX}#g" \
   -sc "%s#${PLACEHOLDER_WINEDLLOVERRIDES}#${WINEDLLOVERRIDES}#g" \
   -sc "%s#${PLACEHOLDER_WINEARCH}#${WINEARCH}#g" \
   -sc "%s#${PLACEHOLDER_EXECUTABLE}#${RC}#g" \
   -sc "%s#${PLACEHOLDER_INCLUDE_DEFAULT_PATHS}#$INCLUDE_DEFAULT_PATHS#g" \
   -sc "%s#${PLACEHOLDER_LIB_DEFAULT_PATHS}#$LIB_DEFAULT_PATHS#g" \
-  -cx "$PATH_DIR/wine-rc"
-chmod +x "$PATH_DIR/wine-rc";
-cp "$PATH_DIR/wine-rc" "$PATH_DIR/rc"; # for cmake
+  -cx "$BIN_DIR/wine-rc"
+  chmod +x "$BIN_DIR/wine-rc";
+  cp "$BIN_DIR/wine-rc" "$BIN_DIR/rc"; # for cmake
+
+}
+
+main "$@"

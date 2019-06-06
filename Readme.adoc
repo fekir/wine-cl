@@ -8,7 +8,7 @@ The installation process is not completely automated, since the https://visualst
 
   * Use a real Windows machine for installing Visual Studio
   * Copy in a separate folder in the GNU/Linux environment all installed files
-  * execute `create-wine-prefix`, for creating a wine prefix for the compiler environment, and for generating wrapper scripts.
+  * execute `create-wine-prefix` (use `--help` for checking available options), for creating a wine prefix for the compiler environment, and for generating wrapper scripts.
   * execute `test.sh` to verify that compiling, linking and execution of the compiled programs works
   * have fun, you should be able to execute `wine-cl`, `wine-link`, `wine-rc`, and `wine-mt`. They support all flags of the native tool, and some, like `--help`, in addition.
 
@@ -16,7 +16,6 @@ The installation process is not completely automated, since the https://visualst
 
 Notice that the status of those scripts is still alpha-quality, here is a list of open issues:
 
-  * Rewrite `create-wine-prefix`, as it should take as parameter the location of the wine prefix, and whre to create the wrapper scripts (paths are hard-coded for now).
   * Improve performance by executing `wine-path` only for absolute files.
   * Try to add some tests with external libraries.
   * Add a test that needs `mt.exe`.
