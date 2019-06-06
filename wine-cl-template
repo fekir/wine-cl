@@ -1,0 +1,99 @@
+#!/bin/sh
+
+set -o errexit
+set -o nounset
+
+export WINEPREFIX="__WINEPREFIX__";
+export WINEDLLOVERRIDES="__WINEDLLOVERRIDES__"
+export WINEARCH="__WINEARCH__"
+export WINEDEBUG=-all
+
+INCLUDE_DEFAULT_PATHS="${INCLUDE:-}"'__INCLUDE_DEFAULT_PATHS__';
+LIB_DEFAULT_PATH="${LIB:-}"'__LIB_DEFAULT_PATHS__';
+
+is_help_param(){
+  [ "$1" = "-h" ] || [ "$1" = "h" ] || [ "$1" = "--help" ] || [ "$1" = "/help" ] || [ "$1" = "help" ] || [ "$1" = "?" ] || [ "$1" = "/?" ];
+}
+help(){
+  wine "$1" "$2" | less --quit-if-one-screen --no-init;
+}
+
+is_version_param(){
+  [ "$1" = "-v" ] || [ "$1" = "--version" ];
+}
+version(){
+  wine "$1" 2>&1 | head -n 2;
+}
+
+main(){
+  EXE='__EXECUTABLE__';
+
+  wineserver --persistent=60 || true; # prints 2 if already running
+  PARSE=true;
+  if [ -n "${VERBOSE+x}" ]; then :;
+    VERBOSE=true;
+  else :;
+    VERBOSE=false;
+  fi
+  NEXT_IS_WINSDK_VER=false;
+  NEXT_IS_WINSDK_DIR=false;
+
+  for key in "$@"; do :;
+    shift
+    if ! $PARSE; then :;
+      set -- "$@" "$key";
+    else
+      if   [ -f "$key" ]; then :; # && [ "${key//}" != "${key}" ]; then :;
+        set -- "$@" "$(winepath --windows "$key")"; # only to abs paths
+        # FIMXE: other embedded paths should get updated too...
+      elif [ "$key" = '--win-sdk-ver' ]; then :;
+        NEXT_IS_WINSDK_VER=true; # stop parsing, but do not give this key to cl.exe
+      elif $NEXT_IS_WINSDK_VER; then :;
+        winsdk_version="$key"; NEXT_IS_WIN_SDK_VER=false;
+       elif [ "$key" = '--win-sdk-dir' ]; then :;
+        NEXT_IS_WINSDK_DIR=true; # stop parsing, but do not give this key to cl.exe
+      elif $NEXT_IS_WINSDK_DIR; then :;
+        winsdk_dir="$key"; NEXT_IS_WIN_SDK_VER=false;
+      elif is_help_param "$key"; then :;
+        help "$EXE" '/?';
+        exit 0;
+      elif is_version_param "$key"; then :;
+        version "$EXE";
+        exit 0;
+      elif [ "$key" = "--" ] ; then :;
+        PARSE=false;
+      elif [ "$key" = "--verbose" ] ; then :;
+        VERBOSE=true;
+      elif [ "$key" = "/FS" ] ; then :;
+        # nothing, just skip
+      else
+        for sub in Fa Fd Fm Fp FR doc FA Fe Fo Fr Fi FI FU '@' Tc Yu Tp Yc I AI 'analyze:log'; do
+          if   [ "${key#*/"$sub"}" != "$key" ]; then :;
+            key="/$sub$(winepath --windows "${key#*/"$sub"}")";
+          elif [ "${key#*-"$sub"}" != "$key" ]; then
+            key="-$sub$(winepath --windows "${key#*-"$sub"}")";
+          fi # FIXME: @ not working (not prepended by /), and replace only abs paths!
+        done
+        set -- "$@" "$key";
+      fi
+    fi
+  done
+
+  if $VERBOSE; then
+    printf 'INCLUDE env: %s\n' "${INCLUDE_DEFAULT_PATHS}";
+    printf 'CL env: %s\n' "${CL:-}";
+    printf '_CL_ env: %s\n' "${_CL_:-}";
+    printf 'LIBPATH env: %s\n' "${LIBPATH:-}";
+    printf 'LIB env: %s\n' "${LIB_DEFAULT_PATH}";
+    printf 'executable: %s\n' "$EXE";
+    printf 'wine prefix: %s\n' "$WINEPREFIX";
+    printf 'parameters: '; printf '"%s" ' "$@"; printf '\n';
+  fi
+
+  CL="${CL:-}" \
+  INCLUDE="${INCLUDE_DEFAULT_PATHS}" \
+  LIB="${LIB_DEFAULT_PATH}" \
+  wine "$EXE" ${1:+"/nologo"} "$@";
+}
+
+main "$@";
