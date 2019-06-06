@@ -18,7 +18,7 @@ set_target_properties(${PROJECT_NAME}-filesystem PROPERTIES CXX_STANDARD 17)
 add_executable(${PROJECT_NAME}-thread thread.cpp)
 set_target_properties(${PROJECT_NAME}-thread PROPERTIES CXX_STANDARD 11)
 
-add_executable(${PROJECT_NAME}-thread_win thread_win.cpp)
+add_executable(${PROJECT_NAME}-thread-win thread_win.cpp)
 
 add_executable(${PROJECT_NAME}-messagebox messagebox.cpp)
 

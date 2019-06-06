@@ -20,9 +20,9 @@ Notice that the status of those scripts is still alpha-quality, here is a list o
   * Try to add some tests with external libraries.
   * Add a test that needs `mt.exe`.
   * There is an issue when building an MFC project with `MAKEFLAGS=-jN`, with `N>1`, this should get investigated
-  * Add test for other build systems apart from CMake/make.
-  * Enhance `test.sh`, it should take as parameter a build directory, and build every target in a separate subfolder.
-  * Install cmake in the wine prefix, and test it too.
+  * Add test for other build systems apart from CMake.
+  * Enhance `test.sh`, it should build every target in a separate subfolder.
+  * Install CMake in the wine prefix, and test it too.
   * Reduce footprint of the wine environment.
 
 == Goals
