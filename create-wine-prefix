@@ -14,7 +14,7 @@ PLACEHOLDER_LIB_DEFAULT_PATHS="__LIB_DEFAULT_PATHS__";
 
 
 DEFAULT_BIN_DIR="$HOME/bin";
-DEFAULT_WINEPREFIX="$HOME/.wine-msvc";
+DEFAULT_WINEPREFIX="$HOME/.wine-cl";
 
 help(){
   printf '%s\n\n' "${0##*/}";
@@ -23,7 +23,8 @@ help(){
   printf '\t--bin directory where to "install" wrapper scripts, default is "%s"\n' "$DEFAULT_BIN_DIR";
   printf '\t--vs directory where to search for cl.exe and all other compontents';
   printf '\t--wine-prefix wine prefix to use, default is "%s". Is also set with WINEPREFIX environment variable\n' "$DEFAULT_WINEPREFIX";
-  printf '\t--no-copy do not copy vs directory in wine prefix';
+  printf '\t--no-copy do not copy vs directory in wine prefix, useful if you have multiple users and do not want to create a copy for everyone.';
+  printf '\--do-not-adapt-wine do not modify prefix (disable desktop integration, use real tmp folder, read-onl, ...)'
   printf '\nEnvironment variables:\n';
   printf '\tWINEPREFIX can be used instead of --wine-prefix, if both are present, the command line parameter takes precedence\,'
   # add --arch, in case someone want's only 32 bit
@@ -49,6 +50,7 @@ main() {
     WINEPREFIX="$DEFAULT_WINEPREFIX";
   fi
   COPY_VS=true;
+  ADAPT_WINE=true;
   while test "$#" -gt 0; do :;
     key="$1";
     case "$key" in
@@ -67,6 +69,9 @@ main() {
       --no-copy)
         COPY_VS=false;
         ;;
+      --do-not-adapt-wine)
+        ADAPT_WINE=false;
+        ;;
       *)
         { printf 'Unrecognized value: %s\n\n' "$key"; help; } >&2;
         exit 1;
@@ -76,11 +81,22 @@ main() {
   done
 
   export WINEPREFIX;
-  export WINEDLLOVERRIDES="mscoree,mshtml="; # avoid unnecessary bloat
-  export WINEARCH=win64;
+  export WINEARCH=win64; # FIXME: add support for 32 bit prefix
   #export WINEARCH=win32;
   #export WINEDEBUG=-all;
-  wine wineboot;
+  if $ADAPT_WINE; then :;
+    # https://www.winehq.org/pipermail/wine-bugs/2012-July/329872.html
+    # https://wiki.archlinux.org/index.php/Wine_package_guidelines#Gecko_and_Mono
+    export WINEDLLOVERRIDES="mscoree,mshtml=";
+    env -u DISPLAY WINEDEBUG=-all wine regedit env.reg;
+    find "$WINEPREFIX" -type d -iname temp -exec rmdir {} + ;
+    find "$WINEPREFIX" -type d -iname tmp -exec rmdir {} + ;
+    rm -rf "$WINEPREFIX/drive_c/users" || rm -rf "$WINEPREFIX/drive_c/users"
+    if ! command -v hardlink > /dev/null 2>&1; then :;
+      hardlink -pot "$WINEPREFIX" >/dev/null;
+    fi
+  fi
+  env -u DISPLAY WINEDEBUG=-all wine wineboot;
 
   # https://askubuntu.com/questions/338758/how-to-quickly-extract-all-kinds-of-archived-files-from-command-line
   # FIXME: in case of an archive, extract it, and override msvc_dir
@@ -105,6 +121,12 @@ main() {
   else
     msvc_dir="$microsoft_visual_studio";
     winsdk_dir="$windows_kits";
+  fi
+
+  if $ADAPT_WINE; then :;
+    # no write, only read+exec
+    # enusres no accumulating of tmp files, registry is excluded because wineserver writes to it
+    chmod -R 554 "$WINEPREFIX/drive_c";
   fi
 
   CL="$(find "$msvc_dir" -iname cl.exe -type f -ipath "*Host$arch/$arch*" -ipath "*bin*" -print -quit)";

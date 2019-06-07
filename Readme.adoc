@@ -23,7 +23,6 @@ Notice that the status of those scripts is still alpha-quality, here is a list o
   * Add test for other build systems apart from CMake.
   * Enhance `test.sh`, it should build every target in a separate subfolder.
   * Install CMake in the wine prefix, and test it too.
-  * Reduce footprint of the wine environment.
 
 == Goals
 
