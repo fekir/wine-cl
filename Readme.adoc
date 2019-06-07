@@ -18,7 +18,7 @@ Notice that the status of those scripts is still alpha-quality, here is a list o
 
   * Try to add some tests with external libraries.
   * Add a test that needs `mt.exe`.
-  * There is an issue when building an MFC project with `MAKEFLAGS=-jN`, with `N>1`, this should get investigated
+  * Apparently bot `/Zi` and `/FS` are not supported in wine, this should get investigate further. For now `/Zi` is ignored.
   * Add test for other build systems apart from CMake.
   * Enhance `test.sh`, it should build every target in a separate subfolder.
   * Install CMake in the wine prefix, and test it too.
@@ -29,7 +29,7 @@ The goal of this project is to provide an easy and automated way to add the wind
 
 This is especially useful when testing or playing with small code snippets to ensure compatibility between different compilers.
 
-Of course it would be nice if it would work as any other native compiler, that's the reason `test.sh` also executes cmake for testing.
+Of course it would be nice if it would work as any other native compiler, that's the reason `test.sh` also executes CMake for testing.
 Since paths are translated from unix to windows every time, and not just when invoking CMake the first time, it will not be as performant.
 
 A better solution would be to install CMake in wine too, and execute it from `cmd.exe`.

@@ -175,17 +175,14 @@ main() {
 
   # use cmake internal testsuite :-)
   cmake_configure_test "Unix Makefiles" "$BUILDDIR/cmake-make-build" "$cl" "$link" "$rc" "$mt";
-  MAKEFLAGS=-j1 cmake --build "$BUILDDIR/cmake-make-build" -- all;
+  cmake --build "$BUILDDIR/cmake-make-build" -- all;
 
   if ! command -v ninja > /dev/null 2>&1; then :;
     printf 'Skipt ninja test suite\n';
   else
     cmake_configure_test "Ninja" "$BUILDDIR/cmake-make-ninja" "$cl" "$link" "$rc" "$mt";
     # MFC issues linking because of parallel builds
-    cmake --build "$BUILDDIR/cmake-make-build" -- \
-      cmake-test-maincpp cmake-test-maincpp-win cmake-test-mainc cmake-test-macro \
-      cmake-test-filesystem cmake-test-thread cmake-test-thread-win cmake-test-messagebox \
-      cmake-test-maincpp-win-withlib cmake-test-maincpp-win-withlib
+    cmake --build "$BUILDDIR/cmake-make-build" -- all;
   fi
 }
 

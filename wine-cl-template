@@ -63,8 +63,12 @@ main(){
         PARSE=false;
       elif [ "$key" = "--verbose" ] ; then :;
         VERBOSE=true;
-      elif [ "$key" = "/FS" ] ; then :;
-        # nothing, just skip
+      elif [ "$key" = "/Zi" ] ; then :;
+        # nothing, just skip, or exchange with /FS
+        # generates with cmake "fatal error C1902: Program database manager mismatch"
+        # https://social.msdn.microsoft.com/Forums/vstudio/en-US/eb49be0b-2a8c-4d55-8791-17e3cb1364c1/fatal-error-c1902-program-database-manager-mismatch-please-check-your-installation?forum=vcgeneral
+        # https://www.winehq.org/pipermail/wine-bugs/2009-October/198928.html
+        # it causes error with parallel builds
       else
         for sub in Fa Fd Fm Fp FR doc FA Fe Fo Fr Fi FI FU '@' Tc Yu Tp Yc I AI 'analyze:log'; do
           if   [ "${key#*/"$sub"}" != "$key" ] && { val=${key#*/"$sub"}; [ "${val#/}" != "$val" ]; }; then :;
