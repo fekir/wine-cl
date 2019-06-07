@@ -6,7 +6,6 @@ set -o nounset
 export WINEPREFIX="__WINEPREFIX__";
 export WINEDLLOVERRIDES="__WINEDLLOVERRIDES__"
 export WINEARCH="__WINEARCH__"
-export WINEDEBUG=-all
 
 INCLUDE_DEFAULT_PATHS="${INCLUDE:-}"'__INCLUDE_DEFAULT_PATHS__';
 LIB_DEFAULT_PATH="${LIB:-}"'__LIB_DEFAULT_PATHS__';
@@ -43,7 +42,7 @@ main(){
     if ! $PARSE; then :;
       set -- "$@" "$key";
     else
-      if   [ -f "$key" ]; then :;
+      if   [ "${key#/}" != "$key" ] && [ -f "$key" ]; then :;
         set -- "$@" "$(winepath --windows "$key")";
       elif [ "$key" = '--win-sdk-ver' ]; then :;
         NEXT_IS_WINSDK_VER=true; # stop parsing, but do not give this key to cl.exe
@@ -67,11 +66,11 @@ main(){
         # nothing, just skip
       else
         for sub in fo g2; do
-          if   [ "${key#*/"$sub"}" != "$key" ]; then :;
+          if   [ "${key#*/"$sub"}" != "$key" ] && { val=${key#*/"$sub"}; [ "${val#/}" != "$val" ]; }; then :;
             key="/$sub$(winepath --windows "${key#*/"$sub"}")";
-          elif [ "${key#*-"$sub"}" != "$key" ]; then
-            key="-$sub$(winepath --windows "${key#*-"$sub"}}")";
-          fi # FIXME: replace only abs paths!
+          elif [ "${key#*-"$sub"}" != "$key" ] && { val=${key#*-"$sub"}; [ "${val#/}" != "$val" ]; }; then :;
+            key="-$sub$(winepath --windows "${key#*-"$sub"}")";
+          fi
         done
         set -- "$@" "$key";
       fi

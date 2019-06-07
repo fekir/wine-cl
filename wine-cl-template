@@ -6,7 +6,7 @@ set -o nounset
 export WINEPREFIX="__WINEPREFIX__";
 export WINEDLLOVERRIDES="__WINEDLLOVERRIDES__"
 export WINEARCH="__WINEARCH__"
-export WINEDEBUG=-all
+export WINEDEBUG=-all; # otheriwse too many "01c1:err:msvcrt:demangle_datatype Unknown type" outputs
 
 INCLUDE_DEFAULT_PATHS="${INCLUDE:-}"'__INCLUDE_DEFAULT_PATHS__';
 LIB_DEFAULT_PATH="${LIB:-}"'__LIB_DEFAULT_PATHS__';
@@ -43,9 +43,8 @@ main(){
     if ! $PARSE; then :;
       set -- "$@" "$key";
     else
-      if   [ -f "$key" ]; then :; # && [ "${key//}" != "${key}" ]; then :;
-        set -- "$@" "$(winepath --windows "$key")"; # only to abs paths
-        # FIMXE: other embedded paths should get updated too...
+      if   [ "${key#/}" != "$key" ] && [ -f "$key" ]; then :;
+        set -- "$@" "$(winepath --windows "$key")";
       elif [ "$key" = '--win-sdk-ver' ]; then :;
         NEXT_IS_WINSDK_VER=true; # stop parsing, but do not give this key to cl.exe
       elif $NEXT_IS_WINSDK_VER; then :;
@@ -68,11 +67,11 @@ main(){
         # nothing, just skip
       else
         for sub in Fa Fd Fm Fp FR doc FA Fe Fo Fr Fi FI FU '@' Tc Yu Tp Yc I AI 'analyze:log'; do
-          if   [ "${key#*/"$sub"}" != "$key" ]; then :;
+          if   [ "${key#*/"$sub"}" != "$key" ] && { val=${key#*/"$sub"}; [ "${val#/}" != "$val" ]; }; then :;
             key="/$sub$(winepath --windows "${key#*/"$sub"}")";
-          elif [ "${key#*-"$sub"}" != "$key" ]; then
+          elif [ "${key#*-"$sub"}" != "$key" ] && { val=${key#*-"$sub"}; [ "${val#/}" != "$val" ]; }; then :;
             key="-$sub$(winepath --windows "${key#*-"$sub"}")";
-          fi # FIXME: @ not working (not prepended by /), and replace only abs paths!
+          fi # FIXME: @ not working (not prepended by /)
         done
         set -- "$@" "$key";
       fi

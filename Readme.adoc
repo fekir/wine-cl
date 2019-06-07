@@ -16,7 +16,6 @@ The installation process is not completely automated, since the https://visualst
 
 Notice that the status of those scripts is still alpha-quality, here is a list of open issues:
 
-  * Improve performance by executing `wine-path` only for absolute files.
   * Try to add some tests with external libraries.
   * Add a test that needs `mt.exe`.
   * There is an issue when building an MFC project with `MAKEFLAGS=-jN`, with `N>1`, this should get investigated
