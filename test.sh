@@ -88,6 +88,12 @@ main() {
   fo="/Fo/$BUILDDIR/"
   out="/out:$outfile"
 
+  # avoid changing user home
+  WINEPREFIX="$(mktemp -p "$BUILDDIR" -d wine.XXXXXX.d)";
+  export WINEPREFIX;
+  export WINEDLLOVERRIDES="mscoree,mshtml="; # avoid unnecessary bloat
+  env -u DISPLAY WINEDEBUG=-all wine wineboot;
+
   # fixme: compile every program in separate folder...
   compile(){
     "$cl" /nologo /EHsc "$fo" "$@" /link "$out";
@@ -171,7 +177,9 @@ main() {
   cmake_configure_test "Unix Makefiles" "$BUILDDIR/cmake-make-build" "$cl" "$link" "$rc" "$mt";
   MAKEFLAGS=-j1 cmake --build "$BUILDDIR/cmake-make-build" -- all;
 
-  if command -v ninja > /dev/null 2>&1; then :;
+  if ! command -v ninja > /dev/null 2>&1; then :;
+    printf 'Skipt ninja test suite\n';
+  else
     cmake_configure_test "Ninja" "$BUILDDIR/cmake-make-ninja" "$cl" "$link" "$rc" "$mt";
     # MFC issues linking because of parallel builds
     cmake --build "$BUILDDIR/cmake-make-build" -- \
