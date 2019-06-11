@@ -91,7 +91,7 @@ main(){
     wine "$EXE" | less --quit-if-one-screen --no-init;
   else
     LIB="${LIB_DEFAULT_PATH}" \
-    wine "$EXE" ${G_VERBOSE:+"/VERBOSE"} /nologo "$@";
+    exec wine "$EXE" ${G_VERBOSE:+"/VERBOSE"} /nologo "$@";
   fi
 }
 

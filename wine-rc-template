@@ -89,7 +89,7 @@ main(){
   fi
 
   INCLUDE="${INCLUDE_DEFAULT_PATHS}" \
-  wine "$EXE" ${1:+"/nologo"} "$@";
+  exec wine "$EXE" ${1:+"/nologo"} "$@";
 }
 
 main "$@";

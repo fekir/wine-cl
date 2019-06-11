@@ -96,7 +96,7 @@ main(){
   CL="${CL:-}" \
   INCLUDE="${INCLUDE_DEFAULT_PATHS}" \
   LIB="${LIB_DEFAULT_PATH}" \
-  wine "$EXE" ${1:+"/nologo"} "$@";
+  exec wine "$EXE" ${1:+"/nologo"} "$@";
 }
 
 main "$@";
