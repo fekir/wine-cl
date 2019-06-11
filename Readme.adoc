@@ -4,7 +4,9 @@ A collection of scripts for "installing" the Microsoft compiler (cl.exe) on GNU/
 
 == Installation
 
-The installation process is not completely automated, since the https://visualstudio.microsoft.com/downloads/[Visual Studio Installer] does not seem to work under wine.
+The installation process is not completely automated, since the https://visualstudio.microsoft.com/downloads/[Visual Studio Installer] does https://appdb.winehq.org/objectManager.php?sClass=application&iId=892[not seem to work under wine].
+
+Therefore:
 
   * Use a real Windows machine for installing Visual Studio
   * Copy in a separate folder in the GNU/Linux environment all installed files
@@ -14,11 +16,12 @@ The installation process is not completely automated, since the https://visualst
 
 == ToDo
 
-Notice that the status of those scripts is still alpha-quality, here is a list of open issues:
+Notice that the status of those scripts is still alpha-quality, no seriuous projects where compiler with it.
+This is a list of things to do in order to ensure some stability:
 
   * Try to add some tests with external libraries.
   * Add a test that needs `mt.exe`.
-  * Apparently bot `/Zi` and `/FS` are not supported in wine, this should get investigate further. For now `/Zi` is ignored.
+  * Apparently `/Zi` and `/FS` together are not supported in wine, this should get investigate further. For now `/Zi` is ignored.
   * Add test for other build systems apart from CMake.
   * Enhance `test.sh`, it should build every target in a separate subfolder.
   * Install CMake in the wine prefix, and test it too.
@@ -30,6 +33,6 @@ The goal of this project is to provide an easy and automated way to add the wind
 This is especially useful when testing or playing with small code snippets to ensure compatibility between different compilers.
 
 Of course it would be nice if it would work as any other native compiler, that's the reason `test.sh` also executes CMake for testing.
-Since paths are translated from unix to windows every time, and not just when invoking CMake the first time, it will not be as performant.
+Since paths are translated from Unix to Windows every time, and not just when invoking CMake the first time, it will not be as performant.
 
-A better solution would be to install CMake in wine too, and execute it from `cmd.exe`.
+A better solution for building big projects could be to install CMake in wine too, and execute it from `cmd.exe`, then all paths would be translated only the first time.
