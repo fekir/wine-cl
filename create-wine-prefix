@@ -21,12 +21,12 @@ help(){
 
   printf '\t--help prints this message\n';
   printf '\t--bin directory where to "install" wrapper scripts, default is "%s"\n' "$DEFAULT_BIN_DIR";
-  printf '\t--vs directory where to search for cl.exe and all other compontents';
+  printf '\t--vs directory where to search for cl.exe and all other compontents\n';
   printf '\t--wine-prefix wine prefix to use, default is "%s". Is also set with WINEPREFIX environment variable\n' "$DEFAULT_WINEPREFIX";
-  printf '\t--no-copy do not copy vs directory in wine prefix, useful if you have multiple users and do not want to create a copy for everyone.';
-  printf '\--do-not-adapt-wine do not modify prefix (disable desktop integration, use real tmp folder, read-onl, ...)'
+  printf '\t--no-copy do not copy vs directory in wine prefix, useful if you have multiple users and do not want to create a copy for everyone.\n';
+  printf '\t--do-not-adapt-wine do not modify prefix (disable desktop integration, use real tmp folder, read-onl, ...)\n'
   printf '\nEnvironment variables:\n';
-  printf '\tWINEPREFIX can be used instead of --wine-prefix, if both are present, the command line parameter takes precedence\,'
+  printf '\tWINEPREFIX can be used instead of --wine-prefix, if both are present, the command line parameter takes precedence\n'
   # add --arch, in case someone want's only 32 bit
 }
 
