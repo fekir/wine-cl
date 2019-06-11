@@ -81,7 +81,9 @@ main() {
   done
   if [ ! -n "${BLD+x}" ]; then :;
     BUILDDIR="$(mktemp -p "$BASE_BUILD_DIR" -d test-msvc.XXXXXX.d)";
-    trap 'rm -r -- "$BUILDDIR"' INT QUIT EXIT;
+    trap 'wineserver --kill; rm -r -- "$BUILDDIR"' INT QUIT EXIT;
+  else
+    trap 'wineserver --kill' INT QUIT EXIT;
   fi
 
   outfile="$BUILDDIR/a.out"
@@ -149,7 +151,7 @@ main() {
   rm -rf "$BUILDDIR/mfc/shared" || true;
   mkdir -p "$BUILDDIR/mfc/shared";
 
-  mfc_macros="/DWIN32_LEAN_AND_MEAN /DNOMINMAX /DSTRICT /DNTDDI_VERSION=NTDDI_VISTA /D_WIN32_WINNT=_WIN32_WINNT_VISTA /DWINVER=_WIN32_WINNT_VISTA /D_UNICODE /DUNICODE /D_ATL_CSTRING_EXPLICIT_CONSTRUCTORS /D_ATL_ALL_WARNINGS /D_SECURE_ATL=1 /D_UNICODE /DUNICODE";
+  mfc_macros="/DWIN32_LEAN_AND_MEAN /DNOMINMAX /DSTRICT /DNTDDI_VERSION=NTDDI_VISTA /D_WIN32_WINNT=_WIN32_WINNT_VISTA /DWINVER=_WIN32_WINNT_VISTA /D_UNICODE /DUNICODE /D_ATL_CSTRING_EXPLICIT_CONSTRUCTORS /D_ATL_ALL_WARNINGS /D_SECURE_ATL=1";
 
   "$cl" /c /Zi /EHsc /MD /D_AFXDLL $mfc_macros "/Fo$BUILDDIR/mfc/shared/" "/Fd$BUILDDIR/mfc/shared/" "test/mfc/main.cpp" "test/mfc/mydialog.cpp"
 
