@@ -44,6 +44,7 @@ cmake_configure_test(){
 
 # when using XDG_RUNTIME_DIR, wine hangs
 BASE_BUILD_DIR=${TMPDIR:-${TMP:-${TEMP:-/tmp}}}
+TIMEOUT=3
 
 main() {
   [ $# -eq 0 ] && set -- "$@" '?';
@@ -129,7 +130,7 @@ main() {
   compile_and_exec "test/thread_win.cpp";
 
   # gui
-  compile "test/messagebox.cpp" "user32.lib"; timeout --preserve-status --signal=QUIT 1 wine "$outfile"; rm "$outfile";
+  compile "test/messagebox.cpp" "user32.lib"; timeout --preserve-status --signal=QUIT "$TIMEOUT" wine "$outfile"; rm "$outfile";
 
   # strange param combination with unix and windows paths
 
@@ -172,7 +173,7 @@ main() {
 
   "$link" "/OUT:$BUILDDIR/mfc/static/mfc.exe" /MANIFEST /MACHINE:X64 /SUBSYSTEM:WINDOWS "/ENTRY:wWinMainCRTStartup" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" "$BUILDDIR/mfc/static/manifest.res" "$BUILDDIR/mfc/static/main.obj" "$BUILDDIR/mfc/static/mydialog.obj"
 
-  timeout --preserve-status --signal=QUIT 2 wine "$BUILDDIR/mfc/static/mfc.exe";
+  timeout --preserve-status --signal=QUIT "$TIMEOUT" wine "$BUILDDIR/mfc/static/mfc.exe";
   # example with other libraries....
 
   # use cmake internal testsuite :-)
