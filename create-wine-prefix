@@ -64,7 +64,7 @@ main() {
         check_value "$#" "$key"; BIN_DIR="$2"; shift;
         ;;
       --wine-prefix)
-        check_value "$@"; WINEPREFIX="$2"; shift;
+        check_value "$#" "$key"; WINEPREFIX="$2"; shift;
         ;;
       --vs)
         check_value "$#" "$key"; VS_DIR="$2"; shift;
