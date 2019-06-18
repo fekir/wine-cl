@@ -134,8 +134,14 @@ main() {
 
   # strange param combination with unix and windows paths
 
-  #  cl + link (separte step), could redo all previous samples
+  #  cl + link (separate step), could redo all previous samples
   "$cl" /EHsc "/Fo$BUILDDIR/main.obj" -c test/main.cpp && "$link" "$out" "$BUILDDIR/main.obj"; wine "$outfile"; rm "$outfile";
+  
+  # debug params seems to cause issues:
+  "$cl" /EHsc "/Fo$BUILDDIR/main.obj" -c test/main.cpp && "$link" /debug:NONE "$out" "$BUILDDIR/main.obj"; wine "$outfile"; rm "$outfile";
+  "$cl" /EHsc "/Fo$BUILDDIR/main.obj" -c test/main.cpp && "$link" /debug:FASTLINK "$out" "$BUILDDIR/main.obj"; wine "$outfile"; rm "$outfile";
+  "$cl" /EHsc "/Fo$BUILDDIR/main.obj" -c test/main.cpp && "$link" /debug "$out" "$BUILDDIR/main.obj"; wine "$outfile"; rm "$outfile";
+  "$cl" /EHsc "/Fo$BUILDDIR/main.obj" -c test/main.cpp && "$link" /debug:FULL "$out" "$BUILDDIR/main.obj"; wine "$outfile"; rm "$outfile";
 
   # link library
   #"$cl" "$fo" -c lib/main.cpp "$out";
@@ -154,7 +160,7 @@ main() {
 
   mfc_macros="/DWIN32_LEAN_AND_MEAN /DNOMINMAX /DSTRICT /DNTDDI_VERSION=NTDDI_VISTA /D_WIN32_WINNT=_WIN32_WINNT_VISTA /DWINVER=_WIN32_WINNT_VISTA /D_UNICODE /DUNICODE /D_ATL_CSTRING_EXPLICIT_CONSTRUCTORS /D_ATL_ALL_WARNINGS /D_SECURE_ATL=1";
 
-  "$cl" /c /Zi /EHsc /MD /D_AFXDLL $mfc_macros "/Fo$BUILDDIR/mfc/shared/" "/Fd$BUILDDIR/mfc/shared/" "test/mfc/main.cpp" "test/mfc/mydialog.cpp"
+  "$cl" /c /EHsc /MD /D_AFXDLL $mfc_macros "/Fo$BUILDDIR/mfc/shared/" "/Fd$BUILDDIR/mfc/shared/" "test/mfc/main.cpp" "test/mfc/mydialog.cpp"
 
   "$rc" /D_AFXDLL $mfc_macros /l 0x0409 /fo"$BUILDDIR/mfc/shared/manifest.res" "test/mfc/resource.rc"
 
@@ -165,7 +171,7 @@ main() {
   # static library,unable to start in separate wine prefix
   rm -rf "$BUILDDIR/mfc/static" || true;
   mkdir -p "$BUILDDIR/mfc/static";
-  "$cl" /c /Zi $mfc_macros /EHsc /MT "/Fo$BUILDDIR/mfc/static/" "/Fd$BUILDDIR/mfc/static/" "test/mfc/main.cpp" "test/mfc/mydialog.cpp"
+  "$cl" /c $mfc_macros /EHsc /MT "/Fo$BUILDDIR/mfc/static/" "/Fd$BUILDDIR/mfc/static/" "test/mfc/main.cpp" "test/mfc/mydialog.cpp"
 
   "$rc" $mfc_macros /l 0x0409 /fo"$BUILDDIR/mfc/static/manifest.res" "test/mfc/resource.rc"
 
