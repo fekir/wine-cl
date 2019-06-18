@@ -22,17 +22,16 @@ add_executable(${PROJECT_NAME}-thread-win thread_win.cpp)
 
 add_executable(${PROJECT_NAME}-messagebox messagebox.cpp)
 
-add_executable(${PROJECT_NAME}-withlib lib/main.cpp)
-add_executable(${PROJECT_NAME}-maincpp-win-withlib WIN32 lib/winmain.cpp)
-
+add_library(${PROJECT_NAME}-dll SHARED lib/lib.cpp lib/lib.hpp)
 add_library(${PROJECT_NAME}-lib STATIC lib/lib.cpp lib/lib.hpp)
+
+add_executable(${PROJECT_NAME}-withlib lib/main.cpp)
 target_link_libraries(${PROJECT_NAME}-withlib ${PROJECT_NAME}-lib)
+
+add_executable(${PROJECT_NAME}-maincpp-win-withlib WIN32 lib/winmain.cpp)
 target_link_libraries(${PROJECT_NAME}-maincpp-win-withlib ${PROJECT_NAME}-lib)
 
 
-add_library(${PROJECT_NAME}-dll SHARED lib/lib.cpp lib/lib.hpp)
-
-#add_library(${PROJECT_NAME}-lib-shared SHARED lib/lib.cpp lib/lib.hpp)
 
 #include (GenerateExportHeader)
 #target_include_directories(${PROJECT_NAME}-lib-shared SYSTEM PUBLIC "${CMAKE_BINARY_DIR}")
@@ -45,4 +44,8 @@ add_library(${PROJECT_NAME}-dll SHARED lib/lib.cpp lib/lib.hpp)
 #)
 #set_target_properties(${PROJECT_NAME}-lib-static PROPERTIES COMPILE_FLAGS -DLIBSHARED_AND_STATIC_STATIC_DEFINE)
 
-add_subdirectory(mfc)
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+	add_subdirectory(mfc)
+else ()
+	# does not build with x86 cl, test program including afxwin.h and nothing else generates ICE
+endif ()
