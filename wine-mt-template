@@ -27,7 +27,6 @@ version(){
 main(){
   EXE='__EXECUTABLE__';
 
-  wineserver --persistent=60 || true; # prints 2 if already running
   PARSE=true;
   if [ -n "${VERBOSE+x}" ]; then :;
     VERBOSE=true;

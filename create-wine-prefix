@@ -106,7 +106,7 @@ main() {
     env -u DISPLAY WINEDEBUG=-all wine regedit env.reg;
     find "$WINEPREFIX" -type d -iname temp -exec rmdir {} + ;
     find "$WINEPREFIX" -type d -iname tmp -exec rmdir {} + ;
-    rm -rf "$WINEPREFIX/drive_c/users" || rm -rf "$WINEPREFIX/drive_c/users"
+    #rm -rf "$WINEPREFIX/drive_c/users" || rm -rf "$WINEPREFIX/drive_c/users"
     if ! command -v hardlink > /dev/null 2>&1; then :;
       hardlink --ignore-mode --ignore-owner --ignore-time "$WINEPREFIX" >/dev/null;
     fi
