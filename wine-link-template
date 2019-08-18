@@ -23,7 +23,7 @@ is_help_param2(){
 }
 
 help(){
-  wine "$1" "$2" | less --quit-if-one-screen --no-init;
+  { wine "$1" "$2"; printf 'Prefix: __WINEPREFIX__\nExecutable: __EXECUTABLE__'; } | less --quit-if-one-screen --no-init;
 }
 
 is_version_param(){
