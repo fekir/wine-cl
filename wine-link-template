@@ -79,9 +79,9 @@ main(){
      else
         for sub in 'ASSEMBLYLINKRESOURCE' 'ASSEMBLYMODULE' 'ASSEMBLYRESOURCE' 'DEF' 'IDLOUT' 'IMPLIB' 'KEYFILE' 'MANIFESTFILE' 'MANIFESTINPUT' 'MAP' 'MIDL' 'NATVIS' 'ORDER' 'OUT' 'PDB' 'PDBSTRIPPED' 'SOURCELINK' 'STUB' 'TLBOUT' 'WINMDFILE' 'WINMDKEYFILE'; do
           if   [ "${key#*/"$sub:"}" != "$key" ] && { val=${key#*/"$sub:"}; [ "${val#/}" != "$val" ]; }; then :;
-            key="/$sub:$(winepath --windows "${key#*/"$sub:"}")";
+            key="/$sub:$(winepath --windows "${key#*/"$sub:"}")"; break;
           elif [ "${key#*-"$sub:"}" != "$key" ] && { val=${key#*-"$sub:"}; [ "${val#/}" != "$val" ]; }; then :;
-            key="-$sub:$(winepath --windows "${key#*-"$sub:"}")";
+            key="-$sub:$(winepath --windows "${key#*-"$sub:"}")"; break;
           fi
         done
         set -- "$@" "$key";

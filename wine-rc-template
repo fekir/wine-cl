@@ -66,9 +66,9 @@ main(){
       else
         for sub in fo g2; do
           if   [ "${key#*/"$sub"}" != "$key" ] && { val=${key#*/"$sub"}; [ "${val#/}" != "$val" ]; }; then :;
-            key="/$sub$(winepath --windows "${key#*/"$sub"}")";
+            key="/$sub$(winepath --windows "${key#*/"$sub"}")"; break;
           elif [ "${key#*-"$sub"}" != "$key" ] && { val=${key#*-"$sub"}; [ "${val#/}" != "$val" ]; }; then :;
-            key="-$sub$(winepath --windows "${key#*-"$sub"}")";
+            key="-$sub$(winepath --windows "${key#*-"$sub"}")"; break;
           fi
         done
         set -- "$@" "$key";

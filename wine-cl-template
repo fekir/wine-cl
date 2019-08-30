@@ -69,13 +69,16 @@ main(){
         # https://www.winehq.org/pipermail/wine-bugs/2009-October/198928.html
         # it causes error with parallel builds
       else
-        for sub in Fa Fd Fm Fp FR doc FA Fe Fo Fr Fi FI FU '@' Tc Yu Tp Yc I AI 'analyze:log'; do
+        for sub in Fa Fd Fm Fp FR doc FA Fe Fo Fr Fi FI FU Tc Yu Tp Yc I AI 'analyze:log'; do
           if   [ "${key#*/"$sub"}" != "$key" ] && { val=${key#*/"$sub"}; [ "${val#/}" != "$val" ]; }; then :;
-            key="/$sub$(winepath --windows "${key#*/"$sub"}")";
+            key="/$sub$(winepath --windows "${key#*/"$sub"}")"; break;
           elif [ "${key#*-"$sub"}" != "$key" ] && { val=${key#*-"$sub"}; [ "${val#/}" != "$val" ]; }; then :;
-            key="-$sub$(winepath --windows "${key#*-"$sub"}")";
-          fi # FIXME: @ not working (not prepended by /)
+            key="-$sub$(winepath --windows "${key#*-"$sub"}")"; break;
+          fi # @ not working (not prepended by / or -)
         done
+        if [ "$sub" = "@" ]; then :;
+          key="$sub$(winepath --windows "${key#*"$sub"}")";
+        fi
         set -- "$@" "$key";
       fi
     fi
