@@ -138,7 +138,6 @@ main() {
   if $ADAPT_WINE; then :;
     # no write, only read+exec
     # enusres no accumulating of tmp files, registry is excluded because wineserver writes to it
-    chmod -R 554 "$WINEPREFIX/drive_c";
   fi
 
   CL="$(find "$msvc_dir" -iname cl.exe -type f -ipath "*Host$ARCH/$ARCH*" -ipath '*bin*' -print -quit)";
