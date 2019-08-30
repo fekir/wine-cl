@@ -44,12 +44,18 @@ target_link_libraries(${PROJECT_NAME}-maincpp-win-withlib ${PROJECT_NAME}-lib)
 #)
 #set_target_properties(${PROJECT_NAME}-lib-static PROPERTIES COMPILE_FLAGS -DLIBSHARED_AND_STATIC_STATIC_DEFINE)
 
-if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-	if(CMAKE_GENERATOR STREQUAL "Ninja") # FIXME: issues with RC command...
-		message(WARNING "Skip mfc test as there are known problems")
-	else()
-		add_subdirectory(mfc)
-	endif()
-else ()
-	# does not build with x86 cl, test program including afxwin.h and nothing else generates ICE
-endif ()
+find_library(MFCLIB MFC)
+if(MFCLIB_FOUND)
+	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+		if(CMAKE_GENERATOR STREQUAL "Ninja") # FIXME: issues with RC command...
+			message(WARNING "Skip mfc test as there are known problems")
+		else()
+			add_subdirectory(mfc)
+		endif()
+	else ()
+		message(WARNING "Known error with MFC on x86, skipping test")
+		# does not build with x86 cl, test program including afxwin.h and nothing else generates ICE
+	endif ()
+else()
+	message(WARNING "MFC not found, skipping tests")
+endif()
