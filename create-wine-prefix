@@ -148,6 +148,7 @@ main() {
   RC="$(find "$winsdk_dir" -iname rc.exe -type f -ipath "*/$ARCH/*" -ipath '*bin*' -print -quit)";
   # recheck: link.exe tries to execute rc.exe and has problems if it is not in path or same folder of link.exe -> copy rc.exe and rcdll.dll in folder of link.exe
   MT="$(find "$winsdk_dir" -iname mt.exe -type f -ipath "*/$ARCH/*" -ipath '*bin*' -print -quit)";
+  MC="$(find "$winsdk_dir" -iname mc.exe -type f -ipath "*/$ARCH/*" -ipath '*bin*' -print -quit)";
 
   INCLUDE_DEFAULT_PATHS="";
   LIB_DEFAULT_PATHS="";
@@ -212,6 +213,18 @@ main() {
   -cx "$winemt"
   chmod +x "$winemt";
   cp "$winemt" "$BIN_DIR/mt"; # for cmake
+
+  winemc="$BIN_DIR/wine-mc$SUFFIX"
+  cp "wine-mc-template" "$winemc";
+  ex \
+  -sc "%s#${PLACEHOLDER_WINEPREFIX}#${WINEPREFIX}#g" \
+  -sc "%s#${PLACEHOLDER_WINEDLLOVERRIDES}#${WINEDLLOVERRIDES}#g" \
+  -sc "%s#${PLACEHOLDER_WINEARCH}#${WINEARCH}#g" \
+  -sc "%s#${PLACEHOLDER_EXECUTABLE}#${MC}#g" \
+  -sc "%s#${PLACEHOLDER_INCLUDE_DEFAULT_PATHS}#$INCLUDE_DEFAULT_PATHS#g" \
+  -sc "%s#${PLACEHOLDER_LIB_DEFAULT_PATHS}#$LIB_DEFAULT_PATHS#g" \
+  -cx "$winemc"
+  chmod +x "$winemc";
 
   winerc="$BIN_DIR/wine-rc$SUFFIX"
   cp "wine-rc-template" "$winerc";

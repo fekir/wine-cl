@@ -1,0 +1,94 @@
+#!/bin/sh
+
+set -o errexit
+set -o nounset
+
+export WINEPREFIX="__WINEPREFIX__";
+export WINEDLLOVERRIDES="__WINEDLLOVERRIDES__"
+export WINEARCH="__WINEARCH__"
+
+INCLUDE_DEFAULT_PATHS="${INCLUDE:-}"'__INCLUDE_DEFAULT_PATHS__';
+LIB_DEFAULT_PATH="${LIB:-}"'__LIB_DEFAULT_PATHS__';
+
+is_help_param(){
+  # -h is already taken
+  [ "$1" = "--help" ] || [ "$1" = "/help" ] || [ "$1" = "help" ] || [ "$1" = "?" ] || [ "$1" = "/?" ];
+}
+help(){
+  { wine "$1" "$2"; printf 'Prefix: __WINEPREFIX__\nExecutable: __EXECUTABLE__'; } | less --quit-if-one-screen --no-init;
+}
+
+is_version_param(){
+  [ "$1" = "-v" ] || [ "$1" = "--version" ];
+}
+version(){
+  wine "$1" 2>&1 | head -n 2;
+}
+
+main(){
+  EXE='__EXECUTABLE__';
+
+
+  PARSE=true;
+  if [ -n "${VERBOSE+x}" ]; then :;
+    VERBOSE=true;
+  else :;
+    VERBOSE=false;
+  fi
+  NEXT_IS_WINSDK_VER=false;
+  NEXT_IS_WINSDK_DIR=false;
+
+  for key in "$@"; do :;
+    shift
+    if ! $PARSE; then :;
+      set -- "$@" "$key";
+    else
+      if   [ "${key#/}" != "$key" ] && [ -f "$key" ]; then :;
+      #if   [ "${key#/}" != "$key" ] && [ -f "$key" ] || [ -d "$key" ]; then :; # not necessary
+        set -- "$@" "$(winepath --windows "$key")";
+      elif [ "$key" = '--win-sdk-ver' ]; then :;
+        NEXT_IS_WINSDK_VER=true; # stop parsing, but do not give this key to cl.exe
+      elif $NEXT_IS_WINSDK_VER; then :;
+        winsdk_version="$key"; NEXT_IS_WIN_SDK_VER=false;
+       elif [ "$key" = '--win-sdk-dir' ]; then :;
+        NEXT_IS_WINSDK_DIR=true; # stop parsing, but do not give this key to cl.exe
+      elif $NEXT_IS_WINSDK_DIR; then :;
+        winsdk_dir="$key"; NEXT_IS_WIN_SDK_VER=false;
+      elif is_help_param "$key"; then :;
+        help "$EXE" '/?';
+        exit 0;
+      elif is_version_param "$key"; then :;
+        version "$EXE";
+        exit 0;
+      elif [ "$key" = "--" ] ; then :;
+        PARSE=false;
+      elif [ "$key" = "--verbose" ] ; then :;
+        VERBOSE=true;
+      else
+        for sub in 'rgs' 'tlb' 'winmd' 'dll' 'replacements' 'out' 'inputresource' 'outputresource' 'updateresource' 'hashupdate' 'validate_file_hashes'; do
+          if   [ "${key#*/"$sub:"}" != "$key" ] && { val=${key#*/"$sub:"}; [ "${val#/}" != "$val" ]; }; then :;
+            key="/$sub:$(winepath --windows "${key#*/"$sub:"}")"; break;
+          elif [ "${key#*-"$sub:"}" != "$key" ] && { val=${key#*-"$sub:"}; [ "${val#/}" != "$val" ]; }; then :;
+            key="-$sub:$(winepath --windows "${key#*-"$sub:"}")"; break;
+          fi
+        done
+        set -- "$@" "$key";
+      fi
+    fi
+  done
+
+  if $VERBOSE; then
+    printf 'INCLUDE env: %s\n' "${INCLUDE_DEFAULT_PATHS}";
+    printf 'CL env: %s\n' "${CL:-}";
+    printf '_CL_ env: %s\n' "${_CL_:-}";
+    printf 'LIBPATH env: %s\n' "${LIBPATH:-}";
+    printf 'LIB env: %s\n' "${LIB_DEFAULT_PATH}";
+    printf 'executable: %s\n' "$EXE";
+    printf 'wine prefix: %s\n' "$WINEPREFIX";
+    printf 'parameters: '; printf '"%s" ' "$@"; printf '\n';
+  fi
+
+  wine "$EXE" "$@";
+}
+
+main "$@";
