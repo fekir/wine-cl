@@ -21,14 +21,16 @@ check_value() {
   fi
 }
 
-cmake_configure_test(){
-  gen="$1"; shift
-  dir="$1"; shift
-  cl="$1"; shift
-  link="$1"; shift
-  rm="$1"; shift
-  mt="$1"; shift
-  cmake -G"$gen" -B "$dir" -S test \
+cmake_test_i(){
+  gen="$1"; shift;
+  dir="$1"; shift;
+  cl="$1"; shift;
+  link="$1"; shift;
+  rc="$1"; shift;
+  mt="$1"; shift;
+  build_type="$1"; shift;
+  source_dir="${1:-test}"; #shift 2>/dev/null || true;
+  cmake -G"$gen" -B "$dir.$build_type" -DCMAKE_BUILD_TYPE="$build_type" -S "$source_dir" \
     -DCMAKE_SYSTEM_NAME=Windows \
     -DCMAKE_SYSTEM_VERSION=1 \
     -DCMAKE_C_COMPILER="$cl" \
@@ -39,7 +41,13 @@ cmake_configure_test(){
     -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
     -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
     -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
-    --debug-trycompile
+    --debug-trycompile --no-warn-unused-cli
+  cmake --build "$dir.$build_type" -- all;
+}
+cmake_test(){
+  cmake_test_i "$@" "Release"
+  cmake_test_i "$@" "Debug"
+  cmake_test_i "$@" "RelWithDebInfo"
 }
 
 # when using XDG_RUNTIME_DIR, wine hangs
@@ -82,8 +90,8 @@ main() {
   done
   if [ ! -n "${BLD+x}" ]; then :;
     BUILDDIR="$(mktemp -p "$BASE_BUILD_DIR" -d test-msvc.XXXXXX.d)";
-    trap 'wineserver --kill; rm -r -- "$BUILDDIR"' INT QUIT EXIT;
-  else
+    trap 'wineserver --kill; echo "Error occured, check result in $BUILDDIR"' INT QUIT EXIT;
+  else :;
     trap 'wineserver --kill' INT QUIT EXIT;
   fi
 
@@ -130,7 +138,7 @@ main() {
   compile_and_exec "test/thread_win.cpp";
 
   # gui
-  compile "test/messagebox.cpp" "user32.lib"; timeout --preserve-status --signal=QUIT "$TIMEOUT" wine "$outfile"; rm "$outfile";
+  compile "test/messagebox.cpp" "user32.lib"; timeout --preserve-status --signal=QUIT "$TIMEOUT" wine "$outfile" || echo "timeout failed (mostly false positive)"; rm "$outfile";
 
   # strange param combination with unix and windows paths
 
@@ -154,7 +162,7 @@ main() {
 
   # example with MFC/ATL
 
-  # shared library,unable to start in separate wine prefix
+  # shared library, unable to start in separate wine prefix, do not execute
   rm -rf "$BUILDDIR/mfc/shared" || true;
   mkdir -p "$BUILDDIR/mfc/shared";
 
@@ -168,7 +176,7 @@ main() {
 
   "$link" /OUT:"$BUILDDIR/mfc/shared/mfc.exe" /MANIFEST /MACHINE:X64 /SUBSYSTEM:WINDOWS "/ENTRY:wWinMainCRTStartup" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" "$BUILDDIR/mfc/shared/manifest.res" "$BUILDDIR/mfc/shared/main.obj" "$BUILDDIR/mfc/shared/mydialog.obj"
 
-  # static library,unable to start in separate wine prefix
+  # static library
   rm -rf "$BUILDDIR/mfc/static" || true;
   mkdir -p "$BUILDDIR/mfc/static";
   "$cl" /c $mfc_macros /EHsc /MT "/Fo$BUILDDIR/mfc/static/" "/Fd$BUILDDIR/mfc/static/" "test/mfc/main.cpp" "test/mfc/mydialog.cpp"
@@ -177,22 +185,22 @@ main() {
 
   #"$mt" /verbose /out:"$BUILDDIR/mfc/static/mfc.exe.embed.manifest" /nologo "$BUILDDIR/mfc/shared/manifest.res"
 
-  "$link" "/OUT:$BUILDDIR/mfc/static/mfc.exe" /MANIFEST /MACHINE:X64 /SUBSYSTEM:WINDOWS "/ENTRY:wWinMainCRTStartup" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" "$BUILDDIR/mfc/static/manifest.res" "$BUILDDIR/mfc/static/main.obj" "$BUILDDIR/mfc/static/mydialog.obj"
+  "$link" "/OUT:$BUILDDIR/mfc/static/mfc.exe" /MANIFEST /SUBSYSTEM:WINDOWS "/ENTRY:wWinMainCRTStartup" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" "$BUILDDIR/mfc/static/manifest.res" "$BUILDDIR/mfc/static/main.obj" "$BUILDDIR/mfc/static/mydialog.obj"
 
   timeout --preserve-status --signal=QUIT "$TIMEOUT" wine "$BUILDDIR/mfc/static/mfc.exe";
   # example with other libraries....
 
   # use cmake internal testsuite :-)
-  cmake_configure_test "Unix Makefiles" "$BUILDDIR/cmake-make-build" "$cl" "$link" "$rc" "$mt";
-  cmake --build "$BUILDDIR/cmake-make-build" -- all;
+  cmake_test "Unix Makefiles" "$BUILDDIR/cmake-make" "$cl" "$link" "$rc" "$mt";
 
   if ! command -v ninja > /dev/null 2>&1; then :;
-    printf 'Skipt ninja test suite\n';
+    printf 'Skip ninja test suite, as ninja does not seem to be avaiable\n';
   else
-    cmake_configure_test "Ninja" "$BUILDDIR/cmake-make-ninja" "$cl" "$link" "$rc" "$mt";
-    # MFC issues linking because of parallel builds
-    cmake --build "$BUILDDIR/cmake-make-build" -- all;
+    cmake_test "Ninja" "$BUILDDIR/cmake-ninja" "$cl" "$link" "$rc" "$mt";
   fi
+
+  # everything ended well, remove output folder instead of displaying help msg
+  trap 'wineserver --kill; rm -rf "$BUILDDIR"' INT QUIT EXIT;
 }
 
 main "$@";
