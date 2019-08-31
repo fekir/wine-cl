@@ -10,9 +10,28 @@ Therefore:
 
   * Use a real Windows machine for installing Visual Studio
   * Copy in a separate folder in the GNU/Linux environment all installed files
+
+
+If you wan't to create an archive, disable compression, otherwise the process will take a lot of time, and there won't be any benefit, as the archive won't be significantly smaller.
+
+7zip is probably the fastest tool:
+`7z a vs.zip -tzip -mx=0 'C:/Program Files (x86)/Microsoft SDKs' 'C:/Program Files (x86)/Microsoft Visual Studio' 'C:/Program Files (x86)/MSBuild' 'C:/Program Files (x86)/Windows Kits'`
+
+If cygwin (and zip) are avaiable:
+`cd '/cygdrive/c/Program Files (x86)' && zip -0 -r ~/vs.zip 'Microsoft SDKs' 'Microsoft Visual Studio' 'MSBuild' 'Windows Kits'`
+
+From powershell (at least version 5, uses a lot of memory!):
+`Compress-Archive -CompressionLevel NoCompression -Path 'C:/Program Files (x86)/Microsoft SDKs', 'C:/Program Files (x86)/Microsoft Visual Studio', 'C:/Program Files (x86)/MSBuild', 'C:/Program Files (x86)/Windows Kits' -DestinationPath vs.zip`
+
+
+On a machine with wine:
+
   * execute `create-wine-prefix` (use `--help` for checking available options), for creating a wine prefix for the compiler environment, and for generating wrapper scripts.
   * execute `test.sh` to verify that compiling, linking and execution of the compiled programs works
-  * have fun, you should be able to execute `wine-cl`, `wine-link`, `wine-rc`, and `wine-mt`. They support all flags of the native tool, and some, like `--help`, in addition.
+
+
+Now have fun, you should be able to execute `wine-cl`, `wine-link`, `wine-rc`, `wine-mt`, ...
+They support all flags of the native tool, and some in addition like `--help` and `--version`.
 
 == ToDo
 
