@@ -174,7 +174,7 @@ main() {
 
   #"$mt" /verbose /out:"$BUILDDIR/mfc/shared/mfc.exe.embed.manifest" /nologo "$BUILDDIR/mfc/shared/manifest.res"
 
-  "$link" /OUT:"$BUILDDIR/mfc/shared/mfc.exe" /MANIFEST /MACHINE:X64 /SUBSYSTEM:WINDOWS "/ENTRY:wWinMainCRTStartup" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" "$BUILDDIR/mfc/shared/manifest.res" "$BUILDDIR/mfc/shared/main.obj" "$BUILDDIR/mfc/shared/mydialog.obj"
+  "$link" /OUT:"$BUILDDIR/mfc/shared/mfc.exe" /MANIFEST /SUBSYSTEM:WINDOWS "/ENTRY:wWinMainCRTStartup" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" "$BUILDDIR/mfc/shared/manifest.res" "$BUILDDIR/mfc/shared/main.obj" "$BUILDDIR/mfc/shared/mydialog.obj"
 
   # static library
   rm -rf "$BUILDDIR/mfc/static" || true;
