@@ -1,0 +1,17 @@
+set(CMAKE_SYSTEM_NAME Windows) #
+set(CMAKE_SYSTEM_VERSION 1)
+
+# specify the cross compiler
+set(CMAKE_C_COMPILER   "__WINE_CL__")
+set(CMAKE_CXX_COMPILER "__WINE_CL__")
+set(CMAKE_LINKER       "__WINE_LINK__")
+set(CMAKE_RC_COMPILER  "__WINE_RC__")
+set(CMAKE_MT_COMPILER  "__WINE_MT__")
+set(CMAKE_MC_COMPILER  "__WINE_MC__")
+
+# "-DMSVC_REDIST_DIR=....", but apparently does not help (see https://github.com/pocoproject/poco/pull/2777)
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)

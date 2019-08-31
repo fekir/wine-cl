@@ -14,14 +14,14 @@ is_help_param(){
   [ "$1" = "-h" ] || [ "$1" = "h" ] || [ "$1" = "--help" ] || [ "$1" = "/help" ] || [ "$1" = "help" ] || [ "$1" = "?" ] || [ "$1" = "/?" ];
 }
 help(){
-  { wine "$1" "$2"; printf 'Prefix: __WINEPREFIX__\nExecutable: __EXECUTABLE__'; } | less --quit-if-one-screen --no-init;
+  { wine "$1" '/nologo' "$2"; printf 'Prefix: __WINEPREFIX__\nExecutable: __EXECUTABLE__'; } | less --quit-if-one-screen --no-init;
 }
 
 is_version_param(){
   [ "$1" = "-v" ] || [ "$1" = "--version" ];
 }
 version(){
-  wine "$1" 2>&1 | head -n 2;
+  wine "$1" 2>&1 | head -n 2; # does not really how version info.. could gather from directory
 }
 
 main(){
@@ -36,6 +36,7 @@ main(){
   NEXT_IS_WINSDK_VER=false;
   NEXT_IS_WINSDK_DIR=false;
 
+  [ $# -eq 0 ] && set -- "$@" '?';
   for key in "$@"; do :;
     shift
     if ! $PARSE; then :;
@@ -83,11 +84,6 @@ main(){
     printf 'executable: %s\n' "$EXE";
     printf 'wine prefix: %s\n' "$WINEPREFIX";
     printf 'parameters: '; printf '"%s" ' "$@"; printf '\n';
-  fi
-
-  if [ $# -eq 0 ]; then :;
-    wine "$EXE" | less --quit-if-one-screen --no-init;
-    exit 0;
   fi
 
   # 0x4102001 is success, but 0x4102001==68165633, and 68165633 modulo 256 == 1

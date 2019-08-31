@@ -6,6 +6,7 @@ set -o nounset
 export WINEPREFIX="__WINEPREFIX__";
 export WINEDLLOVERRIDES="__WINEDLLOVERRIDES__"
 export WINEARCH="__WINEARCH__"
+export WINEDEBUG=-all; # otheriwse too many "01c1:err:msvcrt:demangle_datatype Unknown type" outputs
 
 INCLUDE_DEFAULT_PATHS="${INCLUDE:-}"'__INCLUDE_DEFAULT_PATHS__';
 LIB_DEFAULT_PATH="${LIB:-}"'__LIB_DEFAULT_PATHS__';
@@ -14,7 +15,7 @@ is_help_param(){
   [ "$1" = "-h" ] || [ "$1" = "h" ] || [ "$1" = "--help" ] || [ "$1" = "/help" ] || [ "$1" = "help" ] || [ "$1" = "?" ] || [ "$1" = "/?" ];
 }
 help(){
-  { wine "$1" "$2"; printf 'Prefix: __WINEPREFIX__\nExecutable: __EXECUTABLE__'; } | less --quit-if-one-screen --no-init;
+  { wine "$1" '/nologo' "$2"; printf 'Prefix: __WINEPREFIX__\nExecutable: __EXECUTABLE__'; } | less --quit-if-one-screen --no-init;
 }
 
 is_version_param(){
@@ -37,6 +38,7 @@ main(){
   NEXT_IS_WINSDK_VER=false;
   NEXT_IS_WINSDK_DIR=false;
 
+  [ $# -eq 0 ] && set -- "$@" '?';
   for key in "$@"; do :;
     shift
     if ! $PARSE; then :;
@@ -86,12 +88,8 @@ main(){
     printf 'parameters: '; printf '"%s" ' "$@"; printf '\n';
   fi
 
-  if [ $# -eq 0 ]; then :;
-    wine "$EXE" | less --quit-if-one-screen --no-init;
-  else
-    LIB="${LIB_DEFAULT_PATH}" \
-    exec wine "$EXE" ${G_VERBOSE:+"/VERBOSE"} /nologo "$@";
-  fi
+  LIB="${LIB_DEFAULT_PATH}" \
+  exec wine "$EXE" ${G_VERBOSE:+"/VERBOSE"} /nologo "$@";
 }
 
 main "$@";

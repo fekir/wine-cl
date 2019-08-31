@@ -21,7 +21,7 @@ is_version_param(){
   [ "$1" = "-v" ] || [ "$1" = "--version" ];
 }
 version(){
-  wine "$1" 2>&1 | head -n 2;
+  wine "$1" '/?' 2>&1 | tail -n +2 | head -n 2;
 }
 
 main(){

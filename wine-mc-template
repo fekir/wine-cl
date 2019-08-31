@@ -11,11 +11,11 @@ INCLUDE_DEFAULT_PATHS="${INCLUDE:-}"'__INCLUDE_DEFAULT_PATHS__';
 LIB_DEFAULT_PATH="${LIB:-}"'__LIB_DEFAULT_PATHS__';
 
 is_help_param(){
-  # -h is already taken
+  # -h is already taken, avoid h too for possible confusion
   [ "$1" = "--help" ] || [ "$1" = "/help" ] || [ "$1" = "help" ] || [ "$1" = "?" ] || [ "$1" = "/?" ];
 }
 help(){
-  { wine "$1" "$2"; printf 'Prefix: __WINEPREFIX__\nExecutable: __EXECUTABLE__'; } | less --quit-if-one-screen --no-init;
+  { wine "$1" "$2" 2>&1; printf 'Prefix: __WINEPREFIX__\nExecutable: __EXECUTABLE__'; } | less --quit-if-one-screen --no-init;
 }
 
 is_version_param(){
@@ -28,7 +28,6 @@ version(){
 main(){
   EXE='__EXECUTABLE__';
 
-
   PARSE=true;
   if [ -n "${VERBOSE+x}" ]; then :;
     VERBOSE=true;
@@ -38,13 +37,13 @@ main(){
   NEXT_IS_WINSDK_VER=false;
   NEXT_IS_WINSDK_DIR=false;
 
+  [ $# -eq 0 ] && set -- "$@" '?';
   for key in "$@"; do :;
     shift
     if ! $PARSE; then :;
       set -- "$@" "$key";
     else
       if   [ "${key#/}" != "$key" ] && [ -f "$key" ]; then :;
-      #if   [ "${key#/}" != "$key" ] && [ -f "$key" ] || [ -d "$key" ]; then :; # not necessary
         set -- "$@" "$(winepath --windows "$key")";
       elif [ "$key" = '--win-sdk-ver' ]; then :;
         NEXT_IS_WINSDK_VER=true; # stop parsing, but do not give this key to cl.exe
@@ -88,7 +87,7 @@ main(){
     printf 'parameters: '; printf '"%s" ' "$@"; printf '\n';
   fi
 
-  wine "$EXE" "$@";
+  exec wine "$EXE" "$@";
 }
 
 main "$@";

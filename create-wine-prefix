@@ -238,6 +238,16 @@ main() {
   -cx "$winerc"
   chmod +x "$winerc";
   cp "$winerc" "$BIN_DIR/rc"; # for cmake
+
+  toolchain="$BIN_DIR/wine-toolchain$SUFFIX"
+  cp "wine-toolchain-template" "$toolchain";
+  ex \
+  -sc "%s#__WINE_CL__#${winecl}#g" \
+  -sc "%s#__WINE_LINK__#${winelink}#g" \
+  -sc "%s#__WINE_RC__#${winerc}#g" \
+  -sc "%s#__WINE_MC__#${winemc}#g" \
+  -sc "%s#__WINE_MT__#${winemt}#g" \
+  -cx "$toolchain";
 }
 
 main "$@"
