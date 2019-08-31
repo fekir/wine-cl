@@ -150,6 +150,9 @@ main() {
   MT="$(find "$winsdk_dir" -iname mt.exe -type f -ipath "*/$ARCH/*" -ipath '*bin*' -print -quit)";
   MC="$(find "$winsdk_dir" -iname mc.exe -type f -ipath "*/$ARCH/*" -ipath '*bin*' -print -quit)";
 
+  #optional
+  DUMPBIN="$(find "$msvc_dir" -iname dumpbin.exe -type f -ipath "*Host$ARCH/$ARCH*" -ipath '*bin*' -print -quit)";
+
   INCLUDE_DEFAULT_PATHS="";
   LIB_DEFAULT_PATHS="";
 
@@ -238,6 +241,16 @@ main() {
   -cx "$winerc"
   chmod +x "$winerc";
   cp "$winerc" "$BIN_DIR/rc"; # for cmake
+
+  winedumpbin="$BIN_DIR/wine-dumpbin$SUFFIX"
+  cp "wine-dumpbin-template" "$winedumpbin";
+  ex \
+  -sc "%s#${PLACEHOLDER_WINEPREFIX}#${WINEPREFIX}#g" \
+  -sc "%s#${PLACEHOLDER_WINEDLLOVERRIDES}#${WINEDLLOVERRIDES}#g" \
+  -sc "%s#${PLACEHOLDER_WINEARCH}#${WINEARCH}#g" \
+  -sc "%s#${PLACEHOLDER_EXECUTABLE}#${DUMPBIN}#g" \
+  -cx "$winedumpbin";
+  chmod +x "$winedumpbin";
 
   toolchain="$BIN_DIR/wine-toolchain$SUFFIX"
   cp "wine-toolchain-template" "$toolchain";
